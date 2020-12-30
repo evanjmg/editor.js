@@ -119,12 +119,12 @@ export default class Paste extends Module {
   /**
    * Tags` substitutions parameters
    */
-  private toolsTags: {[tag: string]: TagSubstitute} = {};
+  private toolsTags: { [tag: string]: TagSubstitute } = {};
 
   /**
    * Store tags to substitute by tool name
    */
-  private tagsByTool: {[tools: string]: string[]} = {};
+  private tagsByTool: { [tools: string]: string[] } = {};
 
   /** Patterns` substitutions parameters */
   private toolsPatterns: PatternSubstitute[] = [];
@@ -194,7 +194,7 @@ export default class Paste extends Module {
         this.insertEditorJSData(JSON.parse(editorJSData));
 
         return;
-      } catch (e) {} // Do nothing and continue execution as usual if error appears
+      } catch (e) { } // Do nothing and continue execution as usual if error appears
     }
 
     /**
@@ -464,7 +464,7 @@ export default class Paste extends Module {
   private async processFiles(items: FileList): Promise<void> {
     const { BlockManager, Tools } = this.Editor;
 
-    let dataToInsert: Array<{type: string; event: PasteEvent}>;
+    let dataToInsert: Array<{ type: string; event: PasteEvent }>;
 
     dataToInsert = await Promise.all(
       Array
@@ -488,12 +488,12 @@ export default class Paste extends Module {
    *
    * @param {File} file - file to process
    */
-  private async processFile(file: File): Promise<{event: PasteEvent; type: string}> {
+  private async processFile(file: File): Promise<{ event: PasteEvent; type: string }> {
     const extension = _.getFileExtension(file);
 
     const foundConfig = Object
       .entries(this.toolsFiles)
-      .find(([toolName, { mimeTypes, extensions } ]) => {
+      .find(([toolName, { mimeTypes, extensions }]) => {
         const [fileType, fileSubtype] = file.type.split('/');
 
         const foundExt = extensions.find((ext) => ext.toLowerCase() === extension.toLowerCase());
@@ -510,7 +510,7 @@ export default class Paste extends Module {
       return;
     }
 
-    const [ tool ] = foundConfig;
+    const [tool] = foundConfig;
     const pasteEvent = this.composePasteEvent('file', {
       file,
     });
@@ -592,7 +592,7 @@ export default class Paste extends Module {
    * @returns {PasteData[]}
    */
   private processPlain(plain: string): PasteData[] {
-    const { defaultBlock } = this.config as {defaultBlock: string};
+    const { defaultBlock } = this.config as { defaultBlock: string };
 
     if (!plain) {
       return [];
@@ -697,7 +697,7 @@ export default class Paste extends Module {
    *
    * @returns {Promise<{event: PasteEvent, tool: string}>}
    */
-  private async processPattern(text: string): Promise<{event: PasteEvent; tool: string}> {
+  private async processPattern(text: string): Promise<{ event: PasteEvent; tool: string }> {
     const pattern = this.toolsPatterns.find((substitute) => {
       const execResult = substitute.pattern.exec(text);
 
@@ -755,7 +755,7 @@ export default class Paste extends Module {
    *
    * @returns {void}
    */
-  private insertEditorJSData(blocks: Array<Pick<SavedData, 'data' | 'tool'>>): void {
+  private insertEditorJSData(blocks: Array<Pick<SavedData, 'id' | 'data' | 'tool'>>): void {
     const { BlockManager, Caret, Sanitizer, Tools } = this.Editor;
     const sanitizedBlocks = Sanitizer.sanitizeBlocks(blocks);
 

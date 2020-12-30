@@ -1,4 +1,4 @@
-import {BlockToolData} from '../tools';
+import { BlockToolData } from '../tools';
 
 /**
  * Output of one Tool
@@ -7,6 +7,10 @@ import {BlockToolData} from '../tools';
  * @template Data - the structure describing a data object supported by the tool
  */
 export interface OutputBlockData<Type extends string = string, Data extends object = any> {
+  /**
+   * Unique Id of the block
+   */
+  id?: string;
   /**
    * Tool type
    */
