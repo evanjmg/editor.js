@@ -4,6 +4,7 @@ import {BaseTool, BaseToolConstructable} from './tool';
 
 export * from './block-tool';
 export * from './block-tool-data';
+export * from './element-metadata';
 export * from './inline-tool';
 export * from './tool';
 export * from './tool-config';

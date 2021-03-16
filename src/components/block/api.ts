@@ -1,5 +1,5 @@
 import Block from './index';
-import { BlockToolData, ToolConfig } from '../../../types/tools';
+import { BlockToolData, ElementMetadata, ToolConfig } from '../../../types/tools';
 import { SavedData } from '../../../types/data-formats';
 import { BlockAPI as BlockAPIInterface } from '../../../types/api';
 
@@ -21,6 +21,16 @@ function BlockAPI(
      */
     get id(): string {
       return block.id;
+    },
+
+    /**
+     * Block element metadata
+     *
+     * @returns ElementMetadata
+     */
+
+    get elementMetadata(): ElementMetadata {
+      return block.elementMetadata;
     },
     /**
      * Tool name

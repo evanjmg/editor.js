@@ -1,10 +1,11 @@
-import {BlockToolData} from '../tools';
+import { BlockToolData, ElementMetadata } from '../tools';
 
 /**
  * Tool's saved data
  */
 export interface SavedData {
   id: string;
+  elementMetadata: ElementMetadata;
   tool: string;
   data: BlockToolData;
   time: number;
@@ -15,6 +16,7 @@ export interface SavedData {
  */
 export interface ValidatedData {
   id?: string;
+  elementMetadata?: ElementMetadata;
   tool?: string;
   data?: BlockToolData;
   time?: number;

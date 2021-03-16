@@ -7,7 +7,7 @@ import {
   BlockTuneConstructable,
   SanitizerConfig,
   ToolConfig,
-  ToolSettings
+  ToolSettings,
 } from '../../../types';
 
 import { SavedData } from '../../../types/data-formats';
@@ -22,6 +22,7 @@ import MoveUpTune from '../block-tunes/block-tune-move-up';
 import DeleteTune from '../block-tunes/block-tune-delete';
 import MoveDownTune from '../block-tunes/block-tune-move-down';
 import SelectionUtils from '../selection';
+import { ElementMetadata } from '../../../types/tools';
 
 /**
  * Interface describes Block class constructor argument
@@ -41,6 +42,11 @@ interface BlockConstructorOptions {
    * Initial Block data
    */
   data: BlockToolData;
+
+  /**
+   * Data attributes on elements
+   */
+  elementMetadata: ElementMetadata;
 
   /**
    * Tool's class or constructor function
@@ -116,6 +122,11 @@ export default class Block {
    * Block unique identifier
    */
   public id: string;
+
+  /**
+   * Data attributes on elements
+   */
+  public elementMetadata: ElementMetadata;
 
   /**
    * Block Tool`s name
@@ -225,8 +236,10 @@ export default class Block {
     settings,
     api,
     readOnly,
+    elementMetadata,
   }: BlockConstructorOptions) {
     this.id = id;
+    this.elementMetadata = elementMetadata;
     this.name = name;
     this.class = Tool;
     this.settings = settings;
@@ -244,7 +257,7 @@ export default class Block {
       readOnly,
     });
 
-    this.holder = this.compose();
+    this.holder = this.compose(elementMetadata);
     /**
      * @type {BlockTune[]}
      */
@@ -564,6 +577,7 @@ export default class Block {
 
         return {
           id: this.id,
+          elementMetadata: this.elementMetadata,
           tool: this.name,
           data: finishedExtraction,
           time: measuringEnd - measuringStart,
@@ -691,11 +705,13 @@ export default class Block {
    *
    * @returns {HTMLDivElement}
    */
-  private compose(): HTMLDivElement {
+  private compose(elementMetadata: ElementMetadata): HTMLDivElement {
     const wrapper = $.make('div', Block.CSS.wrapper) as HTMLDivElement,
         contentNode = $.make('div', Block.CSS.content),
         pluginsContent = this.tool.render();
-
+    Object.keys(elementMetadata).forEach((key) => {
+      wrapper.setAttribute(`data-${key}`, elementMetadata[key]);
+    });
     contentNode.appendChild(pluginsContent);
     wrapper.appendChild(contentNode);
 
