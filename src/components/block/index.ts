@@ -709,9 +709,13 @@ export default class Block {
     const wrapper = $.make('div', Block.CSS.wrapper) as HTMLDivElement,
         contentNode = $.make('div', Block.CSS.content),
         pluginsContent = this.tool.render();
-    Object.keys(elementMetadata).forEach((key) => {
-      wrapper.setAttribute(`data-${key}`, elementMetadata[key]);
-    });
+
+    if (elementMetadata) {
+      Object.keys(elementMetadata).forEach((key) => {
+        wrapper.setAttribute(`data-${key}`, elementMetadata[key]);
+      });
+    }
+
     contentNode.appendChild(pluginsContent);
     wrapper.appendChild(contentNode);
 
