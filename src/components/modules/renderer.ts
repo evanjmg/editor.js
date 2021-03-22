@@ -67,6 +67,7 @@ export default class Renderer extends Module {
     const { Tools, BlockManager } = this.Editor;
     const id = item.id;
     const elementMetadata = item.elementMetadata;
+    const metadata = item.metadata;
     const tool = item.type;
     const data = item.data;
 
@@ -74,6 +75,7 @@ export default class Renderer extends Module {
       try {
         BlockManager.insert({
           id,
+          metadata,
           elementMetadata,
           tool,
           data,
@@ -87,6 +89,7 @@ export default class Renderer extends Module {
       const stubData = {
         savedData: {
           id,
+          metadata,
           elementMetadata,
           type: tool,
           data,
@@ -103,6 +106,7 @@ export default class Renderer extends Module {
 
       const stub = BlockManager.insert({
         id,
+        metadata,
         elementMetadata,
         tool: Tools.stubTool,
         data: stubData,

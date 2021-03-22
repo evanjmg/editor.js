@@ -1,4 +1,5 @@
 import { BlockToolData, ElementMetadata } from '../tools';
+import { Metadata } from '../tools/metadata';
 
 /**
  * Output of one Tool
@@ -11,7 +12,11 @@ export interface OutputBlockData<Type extends string = string, Data extends obje
    * Unique Id of the block
    */
   id?: string;
-   /**
+  /**
+   * Element metadata
+   */
+  metadata?: Metadata;
+  /**
    * Element metadata
    */
   elementMetadata?: ElementMetadata;

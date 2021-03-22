@@ -1,5 +1,6 @@
 import { BlockToolData, ElementMetadata, ToolConfig } from '../tools';
 import {SavedData} from '../data-formats';
+import { Metadata } from '../tools/metadata';
 
 /**
  * @interface BlockAPI Describes Block API methods and properties
@@ -9,10 +10,16 @@ export interface BlockAPI {
    * Block unique identifier
    */
   readonly id: string;
+
   /**
-   * Block unique identifier
+   * Block element metadata
    */
   readonly elementMetadata: ElementMetadata;
+
+  /**
+   * Block metadata
+   */
+  readonly metadata: ElementMetadata;
 
   /**
    * Tool name

@@ -23,6 +23,7 @@ import DeleteTune from '../block-tunes/block-tune-delete';
 import MoveDownTune from '../block-tunes/block-tune-move-down';
 import SelectionUtils from '../selection';
 import { ElementMetadata } from '../../../types/tools';
+import { Metadata } from '../../../types/tools/metadata';
 
 /**
  * Interface describes Block class constructor argument
@@ -47,6 +48,11 @@ interface BlockConstructorOptions {
    * Data attributes on elements
    */
   elementMetadata: ElementMetadata;
+
+  /**
+   * Store Data on block
+   */
+  metadata: Metadata;
 
   /**
    * Tool's class or constructor function
@@ -127,6 +133,11 @@ export default class Block {
    * Data attributes on elements
    */
   public elementMetadata: ElementMetadata;
+
+  /**
+   * Store Data on block
+   */
+  public metadata: Metadata;
 
   /**
    * Block Tool`s name
@@ -237,9 +248,11 @@ export default class Block {
     api,
     readOnly,
     elementMetadata,
+    metadata,
   }: BlockConstructorOptions) {
     this.id = id;
     this.elementMetadata = elementMetadata;
+    this.metadata = metadata;
     this.name = name;
     this.class = Tool;
     this.settings = settings;
@@ -577,6 +590,7 @@ export default class Block {
 
         return {
           id: this.id,
+          metadata: this.metadata,
           elementMetadata: this.elementMetadata,
           tool: this.name,
           data: finishedExtraction,

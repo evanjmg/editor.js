@@ -13,6 +13,7 @@ import * as _ from '../utils';
 import Blocks from '../blocks';
 import { BlockToolConstructable, BlockToolData, PasteEvent } from '../../../types';
 import { ElementMetadata } from '../../../types/tools';
+import { Metadata } from '../../../types/tools/metadata';
 
 /**
  * @typedef {BlockManager} BlockManager
@@ -220,13 +221,14 @@ export default class BlockManager extends Module {
    *
    * @returns {Block}
    */
-  public composeBlock({ tool, id = _.generateBlockId(), elementMetadata = {}, data = {} }: { tool: string; id?: string; data?: BlockToolData, elementMetadata?: ElementMetadata }): Block {
+  public composeBlock({ tool, id = _.generateBlockId(), elementMetadata = {}, data = {}, metadata = {} }: { tool: string; id?: string; data?: BlockToolData, elementMetadata?: ElementMetadata, metadata?: Metadata }): Block {
     const readOnly = this.Editor.ReadOnly.isEnabled;
     const settings = this.Editor.Tools.getToolSettings(tool);
     const Tool = this.Editor.Tools.available[tool] as BlockToolConstructable;
     const block = new Block({
       id,
       elementMetadata,
+      metadata,
       name: tool,
       data,
       Tool,
@@ -256,6 +258,7 @@ export default class BlockManager extends Module {
    */
   public insert({
     id = _.generateBlockId(),
+    metadata = {},
     elementMetadata = {},
     tool = this.config.defaultBlock,
     data = {},
@@ -265,6 +268,7 @@ export default class BlockManager extends Module {
   }: {
     id?: string;
     tool?: string;
+      metadata?: Metadata;
     elementMetadata?: ElementMetadata;
     data?: BlockToolData;
     index?: number;
@@ -279,6 +283,7 @@ export default class BlockManager extends Module {
 
     const block = this.composeBlock({
       id,
+      metadata,
       elementMetadata,
       tool,
       data,
