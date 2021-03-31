@@ -38,6 +38,7 @@ export default class InlineToolbar extends Module<InlineToolbarNodes> {
    */
   public CSS = {
     inlineToolbar: 'ce-inline-toolbar',
+    inlineToolbarVisibleChildren: 'ce-inline-toolbar--visible-children',
     inlineToolbarShowed: 'ce-inline-toolbar--showed',
     inlineToolbarLeftOriented: 'ce-inline-toolbar--left-oriented',
     inlineToolbarRightOriented: 'ce-inline-toolbar--right-oriented',

@@ -6,6 +6,7 @@ import { SavedData } from '../../../../types/data-formats';
 import Flipper from '../../flipper';
 import I18n from '../../i18n';
 import { I18nInternalNS } from '../../i18n/namespace-internal';
+import Block from '../../block';
 
 /**
  * HTML Elements used for ConversionToolbar
@@ -36,6 +37,13 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
       conversionToolActive: 'ce-conversion-tool--active',
     };
   }
+
+  /**
+   * Last selection of multiple blocks
+   *
+   * @type {Block[]}
+   */
+  public selectedBlocks: Block[] = [];
 
   /**
    * Conversion Toolbar open/close state
@@ -125,11 +133,27 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
 
   /**
    * Shows Conversion Toolbar
+   *
+   * @param hasMultipleBlocks - boolean for multiblock conversion
    */
-  public open(): void {
-    this.filterTools();
+  public open(hasMultipleBlocks?: boolean): void {
+    // filter tools only for one to one conversions
+    this.filterTools(hasMultipleBlocks);
 
     this.opened = true;
+
+    // check if toolbar needs to be displayed
+    // @todo detach or recreate conversion toolbar as independent instance
+    const inlineToolClass = this.Editor.InlineToolbar.CSS.inlineToolbar;
+
+    if (hasMultipleBlocks && this.nodes.wrapper.parentElement.classList.contains(inlineToolClass)) {
+      // store blocks for merge later
+      this.selectedBlocks = this.Editor.BlockSelection.selectedBlocks;
+      this.nodes.wrapper.parentElement.classList.add(this.Editor.InlineToolbar.CSS.inlineToolbarVisibleChildren);
+    } else {
+      this.selectedBlocks = [];
+    }
+
     this.nodes.wrapper.classList.add(ConversionToolbar.CSS.conversionToolbarShowed);
 
     /**
@@ -178,13 +202,15 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
    */
   public async replaceWithBlock(replacingToolName: string): Promise<void> {
     /**
-     * At first, we get current Block data
+     * At first, we get current Block data with one selection
      *
      * @type {BlockToolConstructable}
      */
-    const currentBlockClass = this.Editor.BlockManager.currentBlock.class;
-    const currentBlockName = this.Editor.BlockManager.currentBlock.name;
-    const savedBlock = await this.Editor.BlockManager.currentBlock.save() as SavedData;
+    const currentBlock = this.Editor.BlockManager.currentBlock;
+
+    const currentBlockClass = currentBlock.class;
+    const currentBlockName = currentBlock.name;
+    const savedBlock = await currentBlock.save() as SavedData;
     const { INTERNAL_SETTINGS } = this.Editor.Tools;
     const blockData = savedBlock.data;
 
@@ -266,6 +292,132 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
   }
 
   /**
+   * Merges many Blocks into one
+   * For that Tools must provide import/export methods and can provide an optional mergeImport method
+   *
+   * @param {string} replacingToolName - name of Tool which replaces current
+   */
+  public async mergeBlocks(replacingToolName: string): Promise<void> {
+    /**
+     * At first, we get all the selected blocks
+     *
+     * @type {BlockToolConstructable}
+     */
+    const selectedBlocks = [ ...this.selectedBlocks ];
+    const blocksData = await Promise.all(selectedBlocks.map(async (block) => {
+      const savedBlock = await block.save();
+
+      return savedBlock && savedBlock.data;
+    }));
+
+    const { INTERNAL_SETTINGS } = this.Editor.Tools;
+
+    /**
+     * Getting a class of replacing Tool
+     *
+     * @type {BlockToolConstructable}
+     */
+    const replacingTool = this.Editor.Tools.toolsClasses[replacingToolName] as BlockToolConstructable;
+
+    /**
+     * Export property can be:
+     * 1) Function — Tool defines which data to return
+     * 2) String — the name of saved property
+     *
+     * In both cases returning value must be a string
+     */
+    const exportData = [];
+
+    blocksData.forEach((data, index) => {
+      const currentBlock = selectedBlocks[index];
+      const currentBlockClass = currentBlock.class;
+      const exportProp = currentBlockClass[INTERNAL_SETTINGS.CONVERSION_CONFIG] ? currentBlockClass[INTERNAL_SETTINGS.CONVERSION_CONFIG].export : null;
+
+      if (_.isFunction(exportProp)) {
+        exportData.push(exportProp(data));
+      } else if (_.isString(exportProp)) {
+        exportData.push(data[exportProp]);
+      } else {
+        _.log(`Conversion «export» property not defined on ${currentBlock.class.toString()}`);
+      }
+    });
+
+    /**
+     * Clean exported data with replacing sanitizer config
+     */
+    const cleaned: string[] = exportData.map(data => this.Editor.Sanitizer.clean(
+      data,
+      replacingTool.sanitize
+    ));
+
+    let newBlockData = {};
+    const conversionConfig = replacingTool[INTERNAL_SETTINGS.CONVERSION_CONFIG];
+
+    /**
+     * «mergeImport» property can be a Function
+     * function — accept imported strings and compose tool data object
+     */
+    if (conversionConfig && conversionConfig.mergeImport) {
+      const mergeImport = conversionConfig.mergeImport;
+
+      if (_.isFunction(mergeImport)) {
+        newBlockData = mergeImport(cleaned, blocksData);
+      } else {
+        _.log('Conversion «mergeImport» property must be a  function. ' +
+          'Function accepts a imported string array and return composed tool data.');
+
+        return;
+      }
+
+      /**
+       * «import» property can be Function or String
+       * function — accept imported string and compose tool data object
+       * string — the name of data field to import
+       */
+    } else if (conversionConfig && conversionConfig.import) {
+      const importProp = conversionConfig.import;
+      const joinedCleaned = cleaned.join(' ');
+
+      if (_.isFunction(importProp)) {
+        newBlockData = importProp(joinedCleaned);
+      } else if (_.isString(importProp)) {
+        newBlockData[importProp] = joinedCleaned;
+      } else {
+        _.log('Conversion «import» property must be a string or function. ' +
+          'String means key of tool data to import. Function accepts a imported string and return composed tool data.');
+
+        return;
+      }
+    }
+
+    const { BlockManager } = this.Editor;
+    const [first, ...deletedBlocks] = selectedBlocks;
+
+    const index = BlockManager.blocks.indexOf(first);
+
+    const block = this.Editor.BlockManager.insert({
+      tool: replacingToolName,
+      data: newBlockData,
+      replace: true,
+      index,
+    });
+
+    deletedBlocks.forEach((deletedBlock) => {
+      const deletedIndex = BlockManager.blocks.indexOf(deletedBlock);
+
+      this.Editor.BlockManager.removeBlock(deletedIndex);
+    });
+
+    this.Editor.BlockSelection.clearSelection();
+    this.close();
+    this.Editor.InlineToolbar.close();
+
+    _.delay(() => {
+      this.Editor.Caret.setToBlock(block);
+    }, 10)();
+  }
+
+  /**
    * Iterates existing Tools and inserts to the ConversionToolbar
    * if tools have ability to import
    */
@@ -326,14 +478,21 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
     this.tools[toolName] = tool;
 
     this.listeners.on(tool, 'click', async () => {
+      if (this.selectedBlocks.length > 1) {
+        this.mergeBlocks(toolName);
+
+        return;
+      }
       await this.replaceWithBlock(toolName);
     });
   }
 
   /**
    * Hide current Tool and show others
+   *
+   * @param {boolean} hasMultipleBlocks - show all if has multiple blocks
    */
-  private filterTools(): void {
+  private filterTools(hasMultipleBlocks: boolean): void {
     const { currentBlock } = this.Editor.BlockManager;
 
     /**
@@ -341,7 +500,7 @@ export default class ConversionToolbar extends Module<ConversionToolbarNodes> {
      */
     Object.entries(this.tools).forEach(([name, button]) => {
       button.hidden = false;
-      button.classList.toggle(ConversionToolbar.CSS.conversionToolHidden, name === currentBlock.name);
+      button.classList.toggle(ConversionToolbar.CSS.conversionToolHidden, hasMultipleBlocks ? false : name === currentBlock.name);
     });
   }
 

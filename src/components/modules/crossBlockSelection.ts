@@ -38,10 +38,13 @@ export default class CrossBlockSelection extends Module {
       return;
     }
 
-    const { BlockManager } = this.Editor;
+    const { BlockManager, ConversionToolbar } = this.Editor;
 
     this.firstSelectedBlock = BlockManager.getBlock(event.target as HTMLElement);
     this.lastSelectedBlock = this.firstSelectedBlock;
+
+    // close multiple block conversion tool bar on mouse down
+    ConversionToolbar.close();
 
     this.listeners.on(document, 'mouseover', this.onMouseOver);
     this.listeners.on(document, 'mouseup', this.onMouseUp);
@@ -171,9 +174,16 @@ export default class CrossBlockSelection extends Module {
 
   /**
    * Mouse up event handler.
+   * Opens Conversion toolbar if more than 1 block selected
    * Removes the listeners
    */
   private onMouseUp = (): void => {
+    const selectedBlocks = this.Editor.BlockSelection.selectedBlocks;
+
+    if (selectedBlocks.length > 1) {
+      this.Editor.ConversionToolbar.open(true);
+    }
+
     this.listeners.off(document, 'mouseover', this.onMouseOver);
     this.listeners.off(document, 'mouseup', this.onMouseUp);
   }
